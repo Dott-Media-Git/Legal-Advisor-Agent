@@ -1,0 +1,31 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.losai.legaladvisor'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
+
+    defaultConfig {
+        applicationId 'com.losai.legaladvisor'
+        minSdk 26
+        targetSdk 36
+        versionCode 11
+        versionName '1.1.9'
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('C:/Users/joseph marvin/Downloads/legal-advisor-upload-2026.jks')
+            storePassword 'LegalAdvisorUpload2026Key'
+            keyAlias 'upload'
+            keyPassword 'LegalAdvisorUpload2026Key'
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+}

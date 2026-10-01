@@ -1,0 +1,16 @@
+{
+  "name": "ai-los",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lean legal operating system MVP with OpenAI-backed assistant workflows.",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs",
+    "test": "node --test test/dotti-e2e.test.mjs",
+    "test:load": "node scripts/load-test.mjs"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

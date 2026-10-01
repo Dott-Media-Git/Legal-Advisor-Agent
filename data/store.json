@@ -1,0 +1,134 @@
+{
+  "clients": [
+    {
+      "id": "cl-001",
+      "name": "Kampala Logistics Ltd",
+      "contact": "Miriam N.",
+      "email": "legal@kampalalogistics.example",
+      "segment": "Commercial"
+    },
+    {
+      "id": "cl-002",
+      "name": "Nile Health Partners",
+      "contact": "Daniel O.",
+      "email": "ops@nilehealth.example",
+      "segment": "Compliance"
+    },
+    {
+      "id": "cl-003",
+      "name": "Apex Property Group",
+      "contact": "Sarah K.",
+      "email": "claims@apexproperty.example",
+      "segment": "Property"
+    }
+  ],
+  "cases": [
+    {
+      "id": "case-001",
+      "reference": "A-102",
+      "title": "Supply contract dispute",
+      "clientId": "cl-001",
+      "category": "Commercial",
+      "status": "review",
+      "priority": "High",
+      "summary": "Vendor alleges delayed performance and seeks penalty enforcement under a 2025 supply agreement.",
+      "nextStep": "Prepare response to notice of breach",
+      "updatedAt": "2026-04-17T08:30:00.000Z",
+      "timeline": [
+        {
+          "time": "2026-04-15",
+          "label": "Demand letter received"
+        },
+        {
+          "time": "2026-04-16",
+          "label": "Procurement records uploaded"
+        },
+        {
+          "time": "2026-04-17",
+          "label": "Counsel review requested"
+        }
+      ]
+    },
+    {
+      "id": "case-002",
+      "reference": "B-214",
+      "title": "Clinic licensing audit",
+      "clientId": "cl-002",
+      "category": "Compliance",
+      "status": "active",
+      "priority": "Medium",
+      "summary": "Regional inspectors requested documentation on staffing ratios and controlled-substance record keeping.",
+      "nextStep": "Compile licensing pack and assign compliance owner",
+      "updatedAt": "2026-04-17T09:10:00.000Z",
+      "timeline": [
+        {
+          "time": "2026-04-14",
+          "label": "Inspection notice received"
+        },
+        {
+          "time": "2026-04-16",
+          "label": "Checklist drafted"
+        }
+      ]
+    },
+    {
+      "id": "case-003",
+      "reference": "C-087",
+      "title": "Property claim mediation",
+      "clientId": "cl-003",
+      "category": "Property",
+      "status": "pending",
+      "priority": "Low",
+      "summary": "Tenant damage claim is set for mediation after failed direct settlement discussions.",
+      "nextStep": "Review valuation evidence",
+      "updatedAt": "2026-04-16T15:45:00.000Z",
+      "timeline": [
+        {
+          "time": "2026-04-12",
+          "label": "Claim filed"
+        },
+        {
+          "time": "2026-04-16",
+          "label": "Mediator proposed for next week"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-001",
+      "title": "Draft response to breach notice",
+      "caseId": "case-001",
+      "status": "pending"
+    },
+    {
+      "id": "task-002",
+      "title": "Validate clinic staffing evidence",
+      "caseId": "case-002",
+      "status": "active"
+    },
+    {
+      "id": "task-003",
+      "title": "Book mediation prep session",
+      "caseId": "case-003",
+      "status": "done"
+    }
+  ],
+  "activity": [
+    {
+      "id": "act-001",
+      "time": "08:45",
+      "text": "Case B-214 assigned to compliance review."
+    },
+    {
+      "id": "act-002",
+      "time": "10:10",
+      "text": "Client summary exported for board briefing."
+    },
+    {
+      "id": "act-003",
+      "time": "11:25",
+      "text": "Filing reminder generated for contract response."
+    }
+  ]
+}

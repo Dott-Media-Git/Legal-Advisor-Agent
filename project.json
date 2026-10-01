@@ -1,0 +1,372 @@
+﻿{
+    "accountId":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+    "alias":  [
+
+              ],
+    "speedInsights":  {
+                          "id":  "yYYIj6ALfuHXpY8YHImjQ5dyA1X",
+                          "hasData":  false
+                      },
+    "autoExposeSystemEnvs":  true,
+    "autoAssignCustomDomains":  true,
+    "autoAssignCustomDomainsUpdatedBy":  "system",
+    "buildCommand":  null,
+    "commandForIgnoringBuildStep":  null,
+    "createdAt":  1778488898667,
+    "crons":  {
+                  "enabledAt":  1778489012630,
+                  "disabledAt":  null,
+                  "updatedAt":  1790742148073,
+                  "deploymentId":  "dpl_5vATF2whbHU9dmd2KWsJdm3nA4hE",
+                  "definitions":  [
+
+                                  ]
+              },
+    "deploymentExpiration":  {
+                                 "expirationDays":  30,
+                                 "expirationDaysProduction":  30,
+                                 "expirationDaysCanceled":  30,
+                                 "expirationDaysErrored":  30,
+                                 "deploymentsToKeep":  10
+                             },
+    "devCommand":  null,
+    "directoryListing":  false,
+    "env":  [
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "preview"
+                               ],
+                    "configurationId":  null,
+                    "id":  "APYhjG2bsYdpVdaa",
+                    "key":  "SUPABASE_ANON_KEY",
+                    "createdAt":  1786712966254,
+                    "updatedAt":  1790511231463,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "visibility":  "secret"
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "preview"
+                               ],
+                    "configurationId":  null,
+                    "id":  "lHBkPoB5U0iEGx2W",
+                    "key":  "SUPABASE_URL",
+                    "createdAt":  1786713069280,
+                    "updatedAt":  1790511230981,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "visibility":  "secret"
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "preview"
+                               ],
+                    "configurationId":  null,
+                    "id":  "cosCtoT6SOw8rl7V",
+                    "key":  "SUPABASE_SERVICE_ROLE_KEY",
+                    "createdAt":  1786713166558,
+                    "updatedAt":  1790511230483,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "visibility":  "secret"
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "production"
+                               ],
+                    "configurationId":  null,
+                    "id":  "6UAZd5XfPNAFkc1L",
+                    "key":  "NVIDIA_API_KEY",
+                    "createdAt":  1786715442000,
+                    "updatedAt":  1786715442000,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  null
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "production"
+                               ],
+                    "configurationId":  null,
+                    "id":  "G0nFTS7WY0MG5NWx",
+                    "key":  "NVIDIA_MODEL",
+                    "createdAt":  1786718663666,
+                    "updatedAt":  1790741934254,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "visibility":  "secret"
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "production"
+                               ],
+                    "configurationId":  null,
+                    "visibility":  "secret",
+                    "id":  "hCVtem9vRVj0D9e4",
+                    "key":  "AI_LOS_ADMIN_EMAIL",
+                    "createdAt":  1790144390387,
+                    "updatedAt":  1790144390387,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  null
+                },
+                {
+                    "type":  "sensitive",
+                    "value":  "",
+                    "target":  [
+                                   "production"
+                               ],
+                    "configurationId":  null,
+                    "visibility":  "secret",
+                    "id":  "S8tcvbT1spnhH5hd",
+                    "key":  "AI_LOS_ADMIN_PASSWORD",
+                    "createdAt":  1790144405113,
+                    "updatedAt":  1790144405113,
+                    "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                    "updatedBy":  null
+                }
+            ],
+    "framework":  "node",
+    "gitForkProtection":  true,
+    "gitLFS":  false,
+    "id":  "prj_cPEorNybRfSmOONDSEg4r6PNA8hZ",
+    "installCommand":  null,
+    "lastRollbackTarget":  null,
+    "lastAliasRequest":  null,
+    "name":  "ai-los",
+    "nodeVersion":  "24.x",
+    "outputDirectory":  null,
+    "productionDeploymentsFastLane":  true,
+    "defaultResourceConfig":  {
+                                  "fluid":  true,
+                                  "functionDefaultRegions":  [
+                                                                 "iad1"
+                                                             ],
+                                  "functionDefaultTimeout":  300,
+                                  "functionDefaultMemoryType":  "standard",
+                                  "functionZeroConfigFailover":  false,
+                                  "elasticConcurrencyEnabled":  false
+                              },
+    "resourceConfig":  {
+                           "fluid":  true,
+                           "functionDefaultRegions":  [
+                                                          "iad1"
+                                                      ],
+                           "buildMachineType":  "basic",
+                           "buildMachineSelection":  "fixed"
+                       },
+    "rootDirectory":  null,
+    "serverlessFunctionRegion":  "iad1",
+    "sourceFilesOutsideRootDirectory":  true,
+    "ssoProtection":  {
+                          "deploymentType":  "all_except_custom_domains"
+                      },
+    "updatedAt":  1790742148073,
+    "live":  false,
+    "enableExternalRewriteCaching":  true,
+    "gitComments":  {
+                        "onCommit":  false,
+                        "onPullRequest":  true
+                    },
+    "gitProviderOptions":  {
+                               "createDeployments":  "enabled"
+                           },
+    "webAnalytics":  {
+                         "id":  "IqW860KZzXlhr6JnQkVma1mkx"
+                     },
+    "oidcTokenConfig":  {
+                            "enabled":  true,
+                            "issuerMode":  "team"
+                        },
+    "hasDeployments":  true,
+    "latestDeployments":  [
+                              {
+                                  "alias":  [
+                                                "ai-los.vercel.app",
+                                                "ai-los-kutesa-isaacs-projects.vercel.app"
+                                            ],
+                                  "aliasAssigned":  1790742148013,
+                                  "aliasError":  null,
+                                  "automaticAliases":  [
+                                                           "ai-los-kutesa-isaacs-projects.vercel.app"
+                                                       ],
+                                  "builds":  [
+
+                                             ],
+                                  "createdAt":  1790742138375,
+                                  "createdIn":  "sfo1",
+                                  "creator":  {
+                                                  "uid":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                                  "email":  "kutesaug1@gmail.com",
+                                                  "username":  "kutesaug1-7246"
+                                              },
+                                  "deploymentHostname":  "ai-gc40uwj52-kutesa-isaacs-projects",
+                                  "forced":  false,
+                                  "id":  "dpl_5vATF2whbHU9dmd2KWsJdm3nA4hE",
+                                  "meta":  {
+                                               "lambdaRuntimeStats":  "{\"nodejs\":1}"
+                                           },
+                                  "name":  "ai-los",
+                                  "plan":  "hobby",
+                                  "private":  true,
+                                  "readyState":  "READY",
+                                  "readySubstate":  "PROMOTED",
+                                  "target":  "production",
+                                  "teamId":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                  "type":  "LAMBDAS",
+                                  "url":  "ai-gc40uwj52-kutesa-isaacs-projects.vercel.app",
+                                  "userId":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                  "withCache":  false,
+                                  "buildingAt":  1790742139479,
+                                  "readyAt":  1790742147800,
+                                  "previewCommentsEnabled":  true,
+                                  "oidcTokenClaims":  {
+                                                          "sub":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                          "iss":  "https://oidc.vercel.com/kutesa-isaacs-projects",
+                                                          "scope":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                          "aud":  "https://vercel.com/kutesa-isaacs-projects",
+                                                          "owner":  "kutesa-isaacs-projects",
+                                                          "owner_id":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                                          "project":  "ai-los",
+                                                          "project_id":  "prj_cPEorNybRfSmOONDSEg4r6PNA8hZ",
+                                                          "environment":  "production",
+                                                          "plan":  "hobby"
+                                                      }
+                              },
+                              {
+                                  "alias":  [
+                                                "ai-los.vercel.app",
+                                                "ai-los-kutesa-isaacs-projects.vercel.app"
+                                            ],
+                                  "aliasAssigned":  1790741953565,
+                                  "aliasError":  null,
+                                  "automaticAliases":  [
+                                                           "ai-los-kutesa-isaacs-projects.vercel.app"
+                                                       ],
+                                  "builds":  [
+
+                                             ],
+                                  "createdAt":  1790741946472,
+                                  "createdIn":  "sfo1",
+                                  "creator":  {
+                                                  "uid":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                                  "email":  "kutesaug1@gmail.com",
+                                                  "username":  "kutesaug1-7246"
+                                              },
+                                  "deploymentHostname":  "ai-wmdtf4qqy-kutesa-isaacs-projects",
+                                  "forced":  true,
+                                  "id":  "dpl_EE1begRGbGhah9kXqLuTq24dc71T",
+                                  "meta":  {
+                                               "actor":  "codex",
+                                               "lambdaRuntimeStats":  "{\"nodejs\":1}",
+                                               "action":  "redeploy",
+                                               "originalDeploymentId":  "dpl_7npkVSV8HjUfX9RxRuA3v4DGwyNB"
+                                           },
+                                  "name":  "ai-los",
+                                  "plan":  "hobby",
+                                  "private":  true,
+                                  "readyState":  "READY",
+                                  "readySubstate":  "PROMOTED",
+                                  "target":  "production",
+                                  "teamId":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                  "type":  "LAMBDAS",
+                                  "url":  "ai-wmdtf4qqy-kutesa-isaacs-projects.vercel.app",
+                                  "userId":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                  "withCache":  false,
+                                  "buildingAt":  1790741947414,
+                                  "readyAt":  1790741953342,
+                                  "previewCommentsEnabled":  true,
+                                  "oidcTokenClaims":  {
+                                                          "sub":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                          "iss":  "https://oidc.vercel.com/kutesa-isaacs-projects",
+                                                          "scope":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                          "aud":  "https://vercel.com/kutesa-isaacs-projects",
+                                                          "owner":  "kutesa-isaacs-projects",
+                                                          "owner_id":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                                          "project":  "ai-los",
+                                                          "project_id":  "prj_cPEorNybRfSmOONDSEg4r6PNA8hZ",
+                                                          "environment":  "production",
+                                                          "plan":  "hobby"
+                                                      }
+                              }
+                          ],
+    "targets":  {
+                    "production":  {
+                                       "alias":  [
+                                                     "ai-los.vercel.app",
+                                                     "ai-los-kutesa-isaacs-projects.vercel.app"
+                                                 ],
+                                       "aliasAssigned":  1790742148013,
+                                       "aliasError":  null,
+                                       "automaticAliases":  [
+                                                                "ai-los-kutesa-isaacs-projects.vercel.app"
+                                                            ],
+                                       "builds":  [
+
+                                                  ],
+                                       "createdAt":  1790742138375,
+                                       "createdIn":  "sfo1",
+                                       "creator":  {
+                                                       "uid":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                                       "email":  "kutesaug1@gmail.com",
+                                                       "username":  "kutesaug1-7246"
+                                                   },
+                                       "deploymentHostname":  "ai-gc40uwj52-kutesa-isaacs-projects",
+                                       "forced":  false,
+                                       "id":  "dpl_5vATF2whbHU9dmd2KWsJdm3nA4hE",
+                                       "meta":  {
+                                                    "lambdaRuntimeStats":  "{\"nodejs\":1}"
+                                                },
+                                       "name":  "ai-los",
+                                       "plan":  "hobby",
+                                       "private":  true,
+                                       "readyState":  "READY",
+                                       "readySubstate":  "PROMOTED",
+                                       "target":  "production",
+                                       "teamId":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                       "type":  "LAMBDAS",
+                                       "url":  "ai-gc40uwj52-kutesa-isaacs-projects.vercel.app",
+                                       "userId":  "CeeTNoKoMZdzGA5WEuI4KeIe",
+                                       "withCache":  false,
+                                       "buildingAt":  1790742139479,
+                                       "readyAt":  1790742147800,
+                                       "previewCommentsEnabled":  true,
+                                       "oidcTokenClaims":  {
+                                                               "sub":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                               "iss":  "https://oidc.vercel.com/kutesa-isaacs-projects",
+                                                               "scope":  "owner:kutesa-isaacs-projects:project:ai-los:environment:production",
+                                                               "aud":  "https://vercel.com/kutesa-isaacs-projects",
+                                                               "owner":  "kutesa-isaacs-projects",
+                                                               "owner_id":  "team_7R94UUPSqKzRtQPrf1G6UbOw",
+                                                               "project":  "ai-los",
+                                                               "project_id":  "prj_cPEorNybRfSmOONDSEg4r6PNA8hZ",
+                                                               "environment":  "production",
+                                                               "plan":  "hobby"
+                                                           }
+                                   }
+                },
+    "protectionBypass":  {
+                             "JFsn4oijkudtnSiJilnigO7ZnMPUS6eV":  {
+                                                                      "scope":  "automation-bypass",
+                                                                      "isEnvVar":  true,
+                                                                      "createdAt":  1778517043211,
+                                                                      "createdBy":  "CeeTNoKoMZdzGA5WEuI4KeIe"
+                                                                  }
+                         },
+    "features":  {
+                     "webAnalytics":  false
+                 },
+    "protectedSourcemaps":  false,
+    "avatar":  null
+}
