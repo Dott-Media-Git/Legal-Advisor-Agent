@@ -12,5 +12,10 @@
   },
   "engines": {
     "node": "22.x"
+  },
+  "dependencies": {
+    "@capacitor/cli": "7.4.3",
+    "@capacitor/core": "7.4.3",
+    "@capacitor/ios": "7.4.3"
   }
 }

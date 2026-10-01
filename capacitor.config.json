@@ -1,0 +1,9 @@
+﻿{
+    "appId":  "com.losai.legaladvisor.ios",
+    "appName":  "Legal Advisor",
+    "webDir":  "ios-web-placeholder",
+    "server":  {
+                   "url":  "https://ai-los.vercel.app",
+                   "cleartext":  false
+               }
+}
