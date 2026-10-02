@@ -270,12 +270,101 @@ async function callNvidiaLegalAdvisor({ message, matter, sources }) {
 }
 
 async function supabaseDocumentRequest(objectName, options = {}) {
-  const response = await fetch(`${supabaseUrl}/storage/v1/object/legal-documents/${encodeURIComponent(objectName)}`, {
+  const encodedPath = String(objectName).split("/").map(encodeURIComponent).join("/");
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/legal-documents/${encodedPath}`, {
     ...options,
     headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, ...(options.headers || {}) },
   });
   if (!response.ok && !(options.method === "DELETE" && response.status === 404)) throw new Error(`Supabase document storage failed (${response.status}).`);
   return response;
+}
+
+const maxChatAttachmentBytes = 25 * 1024 * 1024;
+const allowedChatMimeTypes = new Set([
+  "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.oasis.opendocument.text", "text/plain", "text/markdown", "text/csv", "application/rtf",
+  "image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif",
+  "video/mp4", "video/quicktime", "video/webm", "audio/mpeg", "audio/mp4", "audio/x-m4a",
+  "audio/wav", "audio/x-wav", "audio/webm", "audio/ogg", "audio/aac",
+]);
+const chatMimeByExtension = new Map([
+  [".pdf", "application/pdf"], [".doc", "application/msword"], [".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  [".odt", "application/vnd.oasis.opendocument.text"], [".txt", "text/plain"], [".md", "text/markdown"], [".csv", "text/csv"], [".rtf", "application/rtf"],
+  [".jpg", "image/jpeg"], [".jpeg", "image/jpeg"], [".png", "image/png"], [".webp", "image/webp"], [".gif", "image/gif"], [".heic", "image/heic"], [".heif", "image/heif"],
+  [".mp4", "video/mp4"], [".mov", "video/quicktime"], [".webm", "video/webm"], [".mp3", "audio/mpeg"], [".m4a", "audio/x-m4a"], [".wav", "audio/wav"], [".ogg", "audio/ogg"], [".aac", "audio/aac"],
+]);
+
+function chatAttachmentType(mimeType, name) {
+  const supplied = String(mimeType || "").toLowerCase();
+  if (allowedChatMimeTypes.has(supplied)) return supplied;
+  const inferred = chatMimeByExtension.get(path.extname(String(name || "")).toLowerCase());
+  if (inferred) return inferred;
+  return null;
+}
+
+async function storageJsonRequest(action, objectName, body, extraHeaders = {}) {
+  if (!supabaseConfigured()) throw new Error("Private file storage is not configured.");
+  const encodedPath = String(objectName).split("/").map(encodeURIComponent).join("/");
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/${action}/legal-documents/${encodedPath}`, {
+    method: "POST",
+    headers: { apikey: supabaseServiceKey, Authorization: `Bearer ${supabaseServiceKey}`, "Content-Type": "application/json", ...extraHeaders },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.message || payload.error || `Private file storage request failed (${response.status}).`);
+  return payload;
+}
+
+function absoluteStorageUrl(value) {
+  const url = String(value || "");
+  if (/^https?:\/\//i.test(url)) return url;
+  const storagePath = url.startsWith("/storage/v1/") ? url : `/storage/v1${url.startsWith("/") ? url : `/${url}`}`;
+  return `${supabaseUrl}${storagePath}`;
+}
+
+async function signedChatUploadUrl(objectName) {
+  const payload = await storageJsonRequest("upload/sign", objectName, {});
+  const url = payload.signedUrl || payload.signedURL || payload.url;
+  if (!url || !payload.token) throw new Error("Storage did not return an upload URL.");
+  const signedUrl = new URL(absoluteStorageUrl(url));
+  if (!signedUrl.searchParams.has("token")) signedUrl.searchParams.set("token", payload.token);
+  return { signedUrl: signedUrl.toString(), token: payload.token };
+}
+
+async function signedChatDownloadUrl(objectName) {
+  const payload = await storageJsonRequest("sign", objectName, { expiresIn: 3600 });
+  const url = payload.signedURL || payload.signedUrl;
+  if (!url) throw new Error("Storage did not return a download URL.");
+  return absoluteStorageUrl(url);
+}
+
+async function attachChatDownloadUrls(attachments = []) {
+  return Promise.all(attachments.map(async (attachment) => {
+    try { return { ...attachment, downloadUrl: await signedChatDownloadUrl(attachment.objectName) }; }
+    catch { return { ...attachment, downloadUrl: null }; }
+  }));
+}
+
+async function verifyMatterAttachments(matterId, values) {
+  if (!Array.isArray(values) || values.length > 5) throw new Error("Attach up to five files to one message.");
+  const unique = new Set();
+  const accepted = [];
+  for (const value of values) {
+    const id = String(value?.id || "");
+    const objectName = String(value?.objectName || "");
+    const name = String(value?.name || "").slice(0, 160);
+    const mimeType = chatAttachmentType(value?.mimeType, name);
+    const size = Number(value?.size);
+    if (!id || !/^[a-f0-9]{24,32}$/i.test(id) || unique.has(id) || !objectName.startsWith(`advisor/${matterId}/${id}-`) || !name || !mimeType || !Number.isSafeInteger(size) || size < 1 || size > maxChatAttachmentBytes) {
+      throw new Error("One of the attached files is invalid. Please remove it and try again.");
+    }
+    unique.add(id);
+    const stored = await supabaseDocumentRequest(objectName, { method: "HEAD" });
+    const storedSize = Number(stored.headers.get("content-length"));
+    if (Number.isFinite(storedSize) && storedSize > 0 && storedSize !== size) throw new Error("An uploaded file did not finish correctly. Please attach it again.");
+    accepted.push({ id, name, mimeType, size, objectName, uploadedAt: nowIso() });
+  }
+  return accepted;
 }
 
 function slugify(value) {
@@ -1135,21 +1224,45 @@ export async function handler(request, response) {
       return sendJson(response, 201, { guestToken, matter: getDottiMatter(id, guestToken), messages: [{ senderType: "client", body: message }, { senderType: "assistant", body: followUp }], sources: legalSources(analysis.category) });
     }
 
+    const chatUploadUrlMatch = request.method === "POST" && pathname.match(/^\/api\/dotti\/matters\/([^/]+)\/attachments\/upload-url$/);
+    if (chatUploadUrlMatch) {
+      const body = await parseBody(request);
+      const token = String(request.headers["x-dotti-token"] || body.guestToken || "");
+      const matter = postgres.configured ? await postgres.matter(chatUploadUrlMatch[1], token) : getDottiMatter(chatUploadUrlMatch[1], token);
+      if (!matter) return sendJson(response, 404, { error: "Matter not found." });
+      if (!supabaseConfigured()) return sendJson(response, 503, { error: "Secure file storage is unavailable right now." });
+      const name = String(body.name || "").replaceAll("\\", "/").split("/").pop().trim().slice(0, 140);
+      const mimeType = chatAttachmentType(body.mimeType, name);
+      const size = Number(body.size);
+      if (!name || !mimeType || !Number.isSafeInteger(size) || size < 1 || size > maxChatAttachmentBytes) {
+        return sendJson(response, 400, { error: "Choose a supported file up to 25 MB." });
+      }
+      const id = randomBytes(16).toString("hex");
+      const safeName = name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120) || "attachment";
+      const objectName = `advisor/${matter.id}/${id}-${safeName}`;
+      const signed = await signedChatUploadUrl(objectName);
+      return sendJson(response, 201, { signedUrl: signed.signedUrl, token: signed.token, attachment: { id, name, mimeType, size, objectName } });
+    }
+
     const dottiMatterMatch = pathname.match(/^\/api\/dotti\/matters\/([^/]+)$/);
     if (request.method === "GET" && dottiMatterMatch) {
       const guestToken = String(request.headers["x-dotti-token"] || requestUrl.searchParams.get("token") || "");
       if (postgres.configured) {
         const matter = await postgres.matter(dottiMatterMatch[1], guestToken);
         if (!matter) return sendJson(response, 404, { error: "Matter not found." });
-        const messages = (await postgres.messages(matter.id)).map((item) => ({ id: item.id, senderType: item.sender_type, body: item.body, metadata: item.metadata, createdAt: item.created_at }));
+        const messages = await Promise.all((await postgres.messages(matter.id)).map(async (item) => ({
+          id: item.id, senderType: item.sender_type, body: item.body,
+          metadata: { ...(item.metadata || {}), attachments: await attachChatDownloadUrls(item.metadata?.attachments || []) },
+          createdAt: item.created_at,
+        })));
         const referrals = await supabaseStateRequest(`referrals?matter_id=eq.${encodeURIComponent(matter.id)}&select=id,status,lawyer_user_id,case_id&order=created_at.desc&limit=1`, { method: "GET" });
         const referral = referrals?.[0] ? { id: referrals[0].id, status: referrals[0].status, lawyerUserId: referrals[0].lawyer_user_id, caseId: referrals[0].case_id } : null;
         return sendJson(response, 200, { matter: scalableMatter(matter), messages, sources: await postgres.legalSources(matter.category), referral });
       }
       const matter = getDottiMatter(dottiMatterMatch[1], guestToken);
       if (!matter) return sendJson(response, 404, { error: "Matter not found." });
-      const messages = db.prepare("select id, sender_type as senderType, body, metadata_json as metadataJson, created_at as createdAt from dotti_messages where matter_id = ? order by datetime(created_at), rowid").all(matter.id)
-        .map((item) => ({ ...item, metadata: jsonValue(item.metadataJson, {}) }));
+      const messages = await Promise.all(db.prepare("select id, sender_type as senderType, body, metadata_json as metadataJson, created_at as createdAt from dotti_messages where matter_id = ? order by datetime(created_at), rowid").all(matter.id)
+        .map(async (item) => { const metadata = jsonValue(item.metadataJson, {}); return { ...item, metadata: { ...metadata, attachments: await attachChatDownloadUrls(metadata.attachments || []) } }; }));
       const referral = db.prepare("select id, status, lawyer_user_id as lawyerUserId, case_id as caseId from referrals where matter_id = ? order by datetime(created_at) desc limit 1").get(matter.id);
       return sendJson(response, 200, { matter, messages, sources: legalSources(matter.category), referral });
     }
@@ -1162,44 +1275,55 @@ export async function handler(request, response) {
         let matter = await postgres.matter(dottiChatMatch[1], guestToken);
         if (!matter) return sendJson(response, 404, { error: "Matter not found." });
         const message = String(body.message || "").trim().slice(0, 6000);
-        if (!message) return sendJson(response, 400, { error: "Enter a message." });
-        await postgres.addMessage(matter.id, "client", message);
+        let attachments;
+        try { attachments = await verifyMatterAttachments(matter.id, body.attachments || []); }
+        catch (error) { return sendJson(response, 400, { error: error.message }); }
+        if (!message && !attachments.length) return sendJson(response, 400, { error: "Type a message or attach a file." });
+        const clientMessage = await postgres.addMessage(matter.id, "client", message, { attachments });
         const messages = await postgres.messages(matter.id);
-        const allClientText = messages.filter((item) => item.sender_type === "client").map((item) => item.body).join("\n");
+        const allClientText = messages.filter((item) => item.sender_type === "client" && item.body.trim()).map((item) => item.body).join("\n");
         const analysis = classifyLegalProblem(allClientText);
         matter = await postgres.updateMatter(matter.id, { category: analysis.category, facts: allClientText.split("\n"), issues: analysis.issues, risk: analysis.risk, urgency: analysis.urgency, complexity: analysis.complexity, confidence: "MEDIUM", lawyer_needed: analysis.lawyerNeeded });
         const sources = await postgres.legalSources(analysis.category);
-        let answer = legalAnswer(analysis);
-        if (nvidiaApiKey) {
+        let answer = attachments.length && !message
+          ? `I’ve added ${attachments.length === 1 ? "that file" : "those files"} to your private matter. Tell me what you would like help understanding. Files are shared with a lawyer only if you select them when requesting a consultation.`
+          : legalAnswer(analysis);
+        if (nvidiaApiKey && message) {
           try { answer = (await callNvidiaLegalAdvisor({ message, matter: { ...scalableMatter(matter), ...analysis }, sources })) || answer; }
           catch (error) { console.error("NVIDIA advisor error:", error); }
         }
         await postgres.addMessage(matter.id, "assistant", answer, { analysis, sourceIds: sources.map((source) => source.id) });
-        return sendJson(response, 201, { message: { senderType: "assistant", body: answer }, matter: scalableMatter(matter), sources, actions: analysis.category === "Employment" ? ["Check my contract", "Create a demand letter", "Find an employment lawyer"] : ["Understand my rights", "Review my documents", "Find the right lawyer"] });
+        return sendJson(response, 201, { clientMessage: { id: clientMessage.id, senderType: "client", body: message, metadata: { attachments: await attachChatDownloadUrls(attachments) } }, message: { senderType: "assistant", body: answer }, matter: scalableMatter(matter), sources, actions: analysis.category === "Employment" ? ["Check my contract", "Create a demand letter", "Find an employment lawyer"] : ["Understand my rights", "Review my documents", "Find the right lawyer"] });
       }
       const matter = getDottiMatter(dottiChatMatch[1], guestToken);
       if (!matter) return sendJson(response, 404, { error: "Matter not found." });
       const message = String(body.message || "").trim().slice(0, 6000);
-      if (!message) return sendJson(response, 400, { error: "Enter a message." });
-      db.prepare("insert into dotti_messages (id, matter_id, sender_type, body, metadata_json, created_at) values (?, ?, 'client', ?, '{}', ?)")
-        .run(createId("msg", message), matter.id, message, nowIso());
-      const allClientText = db.prepare("select body from dotti_messages where matter_id = ? and sender_type = 'client'").all(matter.id).map((x) => x.body).join("\n");
+      let attachments;
+      try { attachments = await verifyMatterAttachments(matter.id, body.attachments || []); }
+      catch (error) { return sendJson(response, 400, { error: error.message }); }
+      if (!message && !attachments.length) return sendJson(response, 400, { error: "Type a message or attach a file." });
+      const clientMessageId = createId("msg", message || matter.id);
+      db.prepare("insert into dotti_messages (id, matter_id, sender_type, body, metadata_json, created_at) values (?, ?, 'client', ?, ?, ?)")
+        .run(clientMessageId, matter.id, message, JSON.stringify({ attachments }), nowIso());
+      const allClientText = db.prepare("select body from dotti_messages where matter_id = ? and sender_type = 'client' and body <> ''").all(matter.id).map((x) => x.body).join("\n");
       const analysis = classifyLegalProblem(allClientText);
       db.prepare(`update dotti_matters set category = ?, facts_json = ?, issues_json = ?, risk = ?, urgency = ?,
         complexity = ?, confidence = 'MEDIUM', lawyer_needed = ?, updated_at = ? where id = ?`)
         .run(analysis.category, JSON.stringify(allClientText.split("\n")), JSON.stringify(analysis.issues), analysis.risk,
           analysis.urgency, analysis.complexity, analysis.lawyerNeeded ? 1 : 0, nowIso(), matter.id);
       const sources = legalSources(analysis.category);
-      let answer = analysis.risk === "HIGH"
+      let answer = attachments.length && !message
+        ? `I’ve added ${attachments.length === 1 ? "that file" : "those files"} to your private matter. Tell me what you would like help understanding. Files are shared with a lawyer only if you select them when requesting a consultation.`
+        : analysis.risk === "HIGH"
         ? `SHORT ANSWER\nThis situation may carry serious or time-sensitive legal consequences. Please seek qualified help promptly.\n\nWHAT YOU CAN DO\nPreserve all documents and messages, write down the timeline, avoid signing anything you do not understand, and contact a verified lawyer. If anyone is in immediate danger, contact emergency services.\n\nCONFIDENCE\nMedium — based on the facts you provided.\n\nLEGAL RISK\nHigh`
         : `SHORT ANSWER\nBased on what you have told me, this appears to be a ${analysis.category.toLowerCase()} issue under Ugandan law. You may have options, but the result depends on the documents and full timeline.\n\nWHAT THE LAW SAYS\nUgandan law sets rights and procedures that can apply to ${analysis.issues.join(" and ").toLowerCase()}. I will only rely on the linked legal sources and will flag anything I cannot verify.\n\nHOW IT MAY APPLY TO YOU\nYour account raises: ${analysis.issues.join("; ")}. This is not a prediction that you will win.\n\nWHAT YOU CAN DO\nKeep your contract, letters, payslips, messages, and a dated timeline. Ask for important decisions in writing. A lawyer can assess deadlines and remedies.\n\nCONFIDENCE\nMedium — more documents may change the assessment.\n\nLEGAL RISK\n${analysis.risk.charAt(0) + analysis.risk.slice(1).toLowerCase()}`;
-      if (nvidiaApiKey) {
+      if (nvidiaApiKey && message) {
         try { answer = (await callNvidiaLegalAdvisor({ message, matter: { ...matter, ...analysis, facts: allClientText.split("\n") }, sources })) || answer; }
         catch (error) { console.error("NVIDIA advisor error:", error); }
       }
       db.prepare("insert into dotti_messages (id, matter_id, sender_type, body, metadata_json, created_at) values (?, ?, 'assistant', ?, ?, ?)")
         .run(createId("msg", `${matter.id}-analysis`), matter.id, answer, JSON.stringify({ analysis, sourceIds: sources.map((s) => s.id) }), nowIso());
-      return sendJson(response, 201, { message: { senderType: "assistant", body: answer }, matter: getDottiMatter(matter.id, guestToken), sources,
+      return sendJson(response, 201, { clientMessage: { id: clientMessageId, senderType: "client", body: message, metadata: { attachments: await attachChatDownloadUrls(attachments) } }, message: { senderType: "assistant", body: answer }, matter: getDottiMatter(matter.id, guestToken), sources,
         actions: analysis.category === "Employment" ? ["Check my contract", "Create a demand letter", "Find an employment lawyer"] : ["Understand my rights", "Review my documents", "Find the right lawyer"] });
     }
 
@@ -1231,8 +1355,13 @@ export async function handler(request, response) {
         const phone = String(body.phone || "").trim().slice(0, 80);
         if (!email) return sendJson(response, 400, { error: "Email is required for the lawyer to contact you." });
         const sources = await postgres.legalSources(matter.category);
-        const brief = { matter: matter.title, jurisdiction: matter.jurisdiction, summary: (matter.facts || []).join(" ").slice(0, 3000), potentialIssues: matter.issues || [], importantFacts: matter.facts || [], risk: matter.risk, urgency: matter.urgency, complexity: matter.complexity, confidence: matter.confidence, recommendedPracticeArea: matter.category, sources, client: { name: clientName, email, phone }, referralSource: "Legal Advisor" };
-        const referral = await postgres.rpc("create_referral_bundle", { p_matter_id: matter.id, p_lawyer_id: lawyer.id, p_client_name: clientName, p_email: email, p_phone: phone, p_match_score: lawyer.matchScore, p_brief: brief });
+        const messages = await postgres.messages(matter.id);
+        const availableAttachments = messages.flatMap((item) => Array.isArray(item.metadata?.attachments) ? item.metadata.attachments : []);
+        const selectedIds = [...new Set((Array.isArray(body.attachmentIds) ? body.attachmentIds : []).map((id) => String(id)))];
+        const attachments = availableAttachments.filter((item) => selectedIds.includes(item.id)).map(({ id, name, mimeType, size, objectName, uploadedAt }) => ({ id, name, mimeType, size, objectName, uploadedAt }));
+        if (attachments.length !== selectedIds.length) return sendJson(response, 400, { error: "One of the selected attachments is no longer available in this matter." });
+        const brief = { matter: matter.title, jurisdiction: matter.jurisdiction, summary: (matter.facts || []).join(" ").slice(0, 3000), potentialIssues: matter.issues || [], importantFacts: matter.facts || [], risk: matter.risk, urgency: matter.urgency, complexity: matter.complexity, confidence: matter.confidence, recommendedPracticeArea: matter.category, sources, client: { name: clientName, email, phone }, referralSource: "Legal Advisor", attachments };
+        const referral = await postgres.createReferralBundle({ matter, lawyer, client: { name: clientName, email, phone }, matchScore: lawyer.matchScore, brief, attachments });
         return sendJson(response, 201, { referral, message: "Your consultation request was sent. The lawyer received your AI-prepared case brief." });
       }
       const matter = getDottiMatter(referralCreateMatch[1], token);
@@ -1365,7 +1494,7 @@ export async function handler(request, response) {
           const action = String(body.action || "");
           if (!["accept", "decline", "request_information"].includes(action)) return sendJson(response, 400, { error: "Unknown referral action." });
           const status = action === "accept" ? "accepted" : action === "decline" ? "declined" : "information requested";
-          const updated = await postgres.rpc("update_referral_status", { p_referral_id: referralActionMatch[1], p_lawyer_id: user.id, p_status: status });
+          const updated = await postgres.updateReferralStatus(referralActionMatch[1], user.id, status);
           if (!updated) return sendJson(response, 404, { error: "Referral not found." });
           return sendJson(response, 200, await scalableBootstrap(user));
         }

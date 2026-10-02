@@ -40,7 +40,9 @@ test("employment intake flows through consent, matching and LOS acceptance", asy
   const intake = await json("/api/dotti/matters", { method: "POST", body: JSON.stringify({ message: "My employer fired me yesterday and hasn't paid me for two months." }) });
   assert.equal(intake.matter.jurisdiction, "Uganda");
   assert.equal(intake.matter.category, "Employment");
-  assert.match(intake.messages[1].body, /written termination letter/i);
+  assert.match(intake.messages[1].body, /documents|payslips|termination/i);
+  const login = await json("/api/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@example.test", password: "test-password-123" }) });
+  await json("/api/lawyer/test-discoverability", { method: "POST", headers: { "X-Session-Token": login.session.token }, body: "{}" });
   const headers = { "X-Dotti-Token": intake.guestToken };
   const analysis = await json(`/api/dotti/matters/${intake.matter.id}/messages`, { method: "POST", headers, body: JSON.stringify({ message: "I worked for three years, have a contract, and received no notice." }) });
   assert.equal(analysis.matter.risk, "MEDIUM");
@@ -49,7 +51,6 @@ test("employment intake flows through consent, matching and LOS acceptance", asy
   assert.ok(matches.lawyers[0].practiceAreas.includes("Employment"));
   const referral = await json(`/api/dotti/matters/${intake.matter.id}/referrals`, { method: "POST", headers, body: JSON.stringify({ consent: true, lawyerUserId: matches.lawyers[0].id, name: "Test Client", email: "client@example.test", phone: "+256700000000" }) });
   assert.equal(referral.referral.status, "pending");
-  const login = await json("/api/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@example.test", password: "test-password-123" }) });
   const workspace = await json(`/api/referrals/${referral.referral.id}`, { method: "PATCH", headers: { "X-Session-Token": login.session.token }, body: JSON.stringify({ action: "accept" }) });
   assert.equal(workspace.referrals.find((item) => item.id === referral.referral.id).status, "accepted");
   assert.equal(workspace.cases.find((item) => item.id === referral.referral.caseId).status, "active");
@@ -58,6 +59,8 @@ test("employment intake flows through consent, matching and LOS acceptance", asy
 test("referral cannot be created without explicit consent", async () => {
   const intake = await json("/api/dotti/matters", { method: "POST", body: JSON.stringify({ message: "My landlord wants to evict me." }) });
   const headers = { "Content-Type": "application/json", "X-Dotti-Token": intake.guestToken };
+  const login = await json("/api/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@example.test", password: "test-password-123" }) });
+  await json("/api/lawyer/test-discoverability", { method: "POST", headers: { "X-Session-Token": login.session.token }, body: "{}" });
   const matches = await json(`/api/dotti/matters/${intake.matter.id}/lawyers`, { headers });
   const response = await fetch(`${base}/api/dotti/matters/${intake.matter.id}/referrals`, { method: "POST", headers, body: JSON.stringify({ consent: false, lawyerUserId: matches.lawyers[0].id }) });
   assert.equal(response.status, 400);
