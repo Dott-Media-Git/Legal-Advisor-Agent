@@ -13,6 +13,7 @@ workflows:
     scripts:
       - name: Install iOS dependencies
         script: |
+          npm ci
           cd ios/App
           pod install
       - name: Apply automatic signing profiles
