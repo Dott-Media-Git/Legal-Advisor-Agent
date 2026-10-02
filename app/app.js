@@ -1,5 +1,7 @@
 ﻿const app = document.querySelector("#app");
 if (localStorage.getItem("legal-theme") === "dark") document.documentElement.classList.add("dark");
+const syncNativeTheme = () => window.LegalAdvisorNative?.setDarkMode(document.documentElement.classList.contains("dark"));
+syncNativeTheme();
 const SESSION_KEY = "ai-los-session-token";
 const state = {
   view: "dashboard",
@@ -708,7 +710,7 @@ app.addEventListener("click", (event) => {
   else if (action === "open-new-client") state.modal = "new-client";
   else if (action === "close-modal") state.modal = null;
   else if (action === "logout") return logout();
-  else if (action === "toggle-theme") { document.documentElement.classList.toggle("dark"); localStorage.setItem("legal-theme", document.documentElement.classList.contains("dark") ? "dark" : "light"); return render(); }
+  else if (action === "toggle-theme") { document.documentElement.classList.toggle("dark"); localStorage.setItem("legal-theme", document.documentElement.classList.contains("dark") ? "dark" : "light"); syncNativeTheme(); return render(); }
   else if (action === "ask-assistant") return askAssistant();
   else if (action === "generate-brief") return generateBrief();
   else if (action === "generate-template") return generateTemplateDraft();
