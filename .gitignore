@@ -13,3 +13,4 @@ android/.cxx/
 *.log
 __pycache__/
 android/local.properties
+android/keystore.properties

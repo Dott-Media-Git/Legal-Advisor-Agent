@@ -9,16 +9,28 @@ android {
         applicationId 'com.losai.legaladvisor'
         minSdk 26
         targetSdk 36
-        versionCode 11
-        versionName '1.1.9'
+        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 11
+        versionName project.hasProperty('versionName') ? project.property('versionName') : '1.1.9'
     }
 
     signingConfigs {
         release {
-            storeFile file('C:/Users/joseph marvin/Downloads/legal-advisor-upload-2026.jks')
-            storePassword 'LegalAdvisorUpload2026Key'
-            keyAlias 'upload'
-            keyPassword 'LegalAdvisorUpload2026Key'
+            if (System.getenv('CI') == 'true') {
+                storeFile file(System.getenv('CM_KEYSTORE_PATH'))
+                storePassword System.getenv('CM_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('CM_KEY_ALIAS')
+                keyPassword System.getenv('CM_KEY_PASSWORD')
+            } else {
+                def localSigningFile = rootProject.file('keystore.properties')
+                if (localSigningFile.exists()) {
+                    def localSigning = new Properties()
+                    localSigningFile.withInputStream { localSigning.load(it) }
+                    storeFile file(localSigning['storeFile'])
+                    storePassword localSigning['storePassword']
+                    keyAlias localSigning['keyAlias']
+                    keyPassword localSigning['keyPassword']
+                }
+            }
         }
     }
 
