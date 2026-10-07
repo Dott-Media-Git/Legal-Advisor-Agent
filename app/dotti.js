@@ -2,7 +2,7 @@ const root = document.querySelector("#dotti-app");
 const GUEST_KEY = "legal-advisor-guest-token";
 const MATTER_KEY = "legal-advisor-matter-id";
 const SESSION_KEY = "ai-los-session-token";
-const state = { screen: "home", menuOpen: false, guestToken: localStorage.getItem(GUEST_KEY) || "", matterId: localStorage.getItem(MATTER_KEY) || "", matter: null, messages: [], sources: [], lawyers: [], referral: null, draft: "", pendingFiles: [], busy: false, selectedLawyer: null, account: null, error: "" };
+const state = { screen: "home", menuOpen: false, guestToken: localStorage.getItem(GUEST_KEY) || "", matterId: localStorage.getItem(MATTER_KEY) || "", matter: null, messages: [], sources: [], lawyers: [], referral: null, draft: "", pendingFiles: [], busy: false, selectedLawyer: null, account: null, authPrompt: false, error: "" };
 const syncNativeTheme = () => window.LegalAdvisorNative?.setDarkMode(document.documentElement.classList.contains("dark"));
 
 const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
@@ -111,7 +111,17 @@ function consent() { const l = state.selectedLawyer; const attachments = [...new
 
 function sent() { return shell(`<section class="success"><div class="success-mark">OK</div><p class="kicker">Request sent securely</p><h1>Your lawyer has the context.</h1><p>${escapeHtml(state.selectedLawyer.name)} received your contact details and AI-prepared case brief. Your request is pending review.</p><div class="status-card"><span>Current status</span><strong>Lawyer requested</strong><small>We'll keep this legal journey together in Legal Advisor and the lawyer's LOS workspace.</small></div><button class="primary" data-go="advisor">Return to my matter</button></section>`); }
 
-function render() { root.innerHTML = state.screen === "advisor" ? advisor() : state.screen === "matches" ? matches() : state.screen === "consent" ? consent() : state.screen === "sent" ? sent() : home(); }
+function renderAuthPrompt() {
+  document.querySelector("#auth-prompt")?.remove();
+  if (!state.authPrompt) return;
+  const modal = document.createElement("div");
+  modal.id = "auth-prompt";
+  modal.className = "auth-prompt-backdrop";
+  modal.innerHTML = `<section class="auth-prompt" role="dialog" aria-modal="true" aria-labelledby="auth-prompt-title"><button type="button" class="auth-prompt-close" data-auth-close aria-label="Close">×</button><div class="auth-prompt-icon">LA</div><p class="kicker">Private lawyer matching</p><h2 id="auth-prompt-title">Sign in to find a lawyer</h2><p>Create or sign in to an account before viewing lawyer profiles or sharing a consultation request. Your conversation remains private until you choose what to share.</p><div class="auth-prompt-actions"><a class="primary" href="/signup?mode=account">Sign in</a><a class="outline" href="/signup?mode=account&new=1">Create an account</a></div></section>`;
+  document.body.append(modal);
+}
+
+function render() { root.innerHTML = state.screen === "advisor" ? advisor() : state.screen === "matches" ? matches() : state.screen === "consent" ? consent() : state.screen === "sent" ? sent() : home(); renderAuthPrompt(); }
 
 root.addEventListener("submit", (event) => { event.preventDefault(); const form = event.target; if (form.id === "start-form") begin(new FormData(form).get("message")); if (form.id === "chat-form") sendMessage(new FormData(form).get("message")); if (form.id === "referral-form") sendReferral(form); });
 root.addEventListener("change", (event) => {
@@ -124,7 +134,8 @@ root.addEventListener("change", (event) => {
   state.pendingFiles.push(...accepted.slice(0, Math.max(available, 0)));
   render();
 });
-root.addEventListener("click", (event) => { const el = event.target.closest("button"); if (!el) return; if (el.dataset.menu !== undefined) { state.menuOpen = !state.menuOpen; return render(); } if (el.dataset.theme !== undefined) { document.documentElement.classList.toggle("dark"); localStorage.setItem("legal-theme", document.documentElement.classList.contains("dark") ? "dark" : "light"); syncNativeTheme(); } if (el.dataset.start !== undefined) document.querySelector("#start-form textarea")?.focus(); if (el.dataset.prompt) begin(el.dataset.prompt); if (el.dataset.attach !== undefined) document.querySelector("#chat-attachment-input")?.click(); if (el.dataset.removeFile !== undefined) { state.pendingFiles.splice(Number(el.dataset.removeFile), 1); render(); } if (el.dataset.find !== undefined) findLawyers(); if (el.dataset.actionPrompt) sendMessage(el.dataset.actionPrompt); if (el.dataset.go) { state.screen = el.dataset.go; render(); } if (el.dataset.choose) { state.selectedLawyer = state.lawyers.find((x) => x.id === el.dataset.choose); state.screen = "consent"; render(); } if (el.dataset.resume !== undefined && state.matter) { state.screen = "advisor"; render(); } });
+root.addEventListener("click", (event) => { const el = event.target.closest("button"); if (!el) return; if (el.dataset.menu !== undefined) { state.menuOpen = !state.menuOpen; return render(); } if (el.dataset.theme !== undefined) { document.documentElement.classList.toggle("dark"); localStorage.setItem("legal-theme", document.documentElement.classList.contains("dark") ? "dark" : "light"); syncNativeTheme(); } if (el.dataset.start !== undefined) document.querySelector("#start-form textarea")?.focus(); if (el.dataset.prompt) begin(el.dataset.prompt); if (el.dataset.attach !== undefined) document.querySelector("#chat-attachment-input")?.click(); if (el.dataset.removeFile !== undefined) { state.pendingFiles.splice(Number(el.dataset.removeFile), 1); render(); } if (el.dataset.authClose !== undefined) { state.authPrompt = false; return render(); } if (el.dataset.find !== undefined) { if (!state.account) { state.authPrompt = true; return render(); } findLawyers(); } if (el.dataset.actionPrompt) sendMessage(el.dataset.actionPrompt); if (el.dataset.go) { state.screen = el.dataset.go; render(); } if (el.dataset.choose) { state.selectedLawyer = state.lawyers.find((x) => x.id === el.dataset.choose); state.screen = "consent"; render(); } if (el.dataset.resume !== undefined && state.matter) { state.screen = "advisor"; render(); } });
+document.addEventListener("click", (event) => { if (event.target.closest("[data-auth-close]")) { state.authPrompt = false; render(); } });
 
 async function boot() { if (localStorage.getItem("legal-theme") === "dark") document.documentElement.classList.add("dark"); syncNativeTheme(); try { const account = await request("/api/auth/me"); state.account = account.user || null; } catch {} if (state.matterId && state.guestToken) { try { const payload = await request(`/api/dotti/matters/${state.matterId}`); setMatter(payload); } catch { localStorage.removeItem(MATTER_KEY); state.matterId = ""; } } render(); }
 boot();

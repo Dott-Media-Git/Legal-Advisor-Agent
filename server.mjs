@@ -1329,6 +1329,8 @@ export async function handler(request, response) {
 
     const dottiMatchesMatch = request.method === "GET" && pathname.match(/^\/api\/dotti\/matters\/([^/]+)\/lawyers$/);
     if (dottiMatchesMatch) {
+      const user = await requireUser(request, response);
+      if (!user) return;
       const token = String(request.headers["x-dotti-token"] || requestUrl.searchParams.get("token") || "");
       if (postgres.configured) {
         const matter = await postgres.matter(dottiMatchesMatch[1], token);

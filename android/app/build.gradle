@@ -9,8 +9,8 @@ android {
         applicationId 'com.losai.legaladvisor'
         minSdk 26
         targetSdk 36
-        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 11
-        versionName project.hasProperty('versionName') ? project.property('versionName') : '1.1.9'
+        versionCode project.hasProperty('versionCode') ? project.property('versionCode').toInteger() : 14
+        versionName project.hasProperty('versionName') ? project.property('versionName') : '1.2.2'
     }
 
     signingConfigs {

@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.widget.FrameLayout;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -18,11 +19,16 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private FrameLayout root;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        configureSystemBars(false);
+        // Keep a system-bar failure from taking down the whole WebView activity on
+        // OEM builds that implement edge-to-edge differently.
+        try { configureSystemBars(false); } catch (RuntimeException ignored) { }
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(248, 245, 238));
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(248, 245, 238));
         webView.setWebViewClient(new WebViewClient() {
@@ -35,7 +41,7 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        webView.setOnApplyWindowInsetsListener((view, insets) -> {
+        root.setOnApplyWindowInsetsListener((view, insets) -> {
             int top;
             int bottom;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -49,9 +55,9 @@ public class MainActivity extends Activity {
                 }
                 bottom = insets.getSystemWindowInsetBottom();
             }
+            // Apply the system-bar space to the native container. Padding the WebView
+            // itself is unreliable on edge-to-edge WebView implementations.
             view.setPadding(0, top, 0, bottom);
-            // Insets are applied to the WebView viewport here. Consume them so web content
-            // or child views cannot apply the same system-bar space a second time.
             return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ? WindowInsets.CONSUMED : insets.consumeSystemWindowInsets();
         });
         webView.addJavascriptInterface(new ThemeBridge(), "LegalAdvisorNative");
@@ -59,16 +65,22 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        root.addView(webView, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
+        root.requestApplyInsets();
         webView.loadUrl("https://ai-los.vercel.app/");
-        setContentView(webView);
-        webView.requestApplyInsets();
     }
 
     private void configureSystemBars(boolean darkTheme) {
         Window window = getWindow();
         int surface = darkTheme ? Color.rgb(9, 17, 14) : Color.rgb(248, 245, 238);
-        window.setStatusBarColor(surface);
-        window.setNavigationBarColor(surface);
+        // Android 15+ manages these surfaces as part of enforced edge-to-edge.
+        // Setting their colors there can throw on some vendor implementations.
+        if (Build.VERSION.SDK_INT < 35) {
+            window.setStatusBarColor(surface);
+            window.setNavigationBarColor(surface);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false);
         } else {
@@ -82,12 +94,11 @@ public class MainActivity extends Activity {
                 controller.setSystemBarsAppearance(lightBars,
                     WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
             }
-        } else {
-            int flags = window.getDecorView().getSystemUiVisibility();
-            flags = darkTheme ? flags & ~(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
-                              : flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-            window.getDecorView().setSystemUiVisibility(flags);
         }
+        int flags = window.getDecorView().getSystemUiVisibility();
+        flags = darkTheme ? flags & ~(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)
+                          : flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        window.getDecorView().setSystemUiVisibility(flags);
     }
 
     private final class ThemeBridge {
@@ -95,7 +106,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 int surface = dark ? Color.rgb(9, 17, 14) : Color.rgb(248, 245, 238);
                 webView.setBackgroundColor(surface);
-                configureSystemBars(dark);
+                try { configureSystemBars(dark); } catch (RuntimeException ignored) { }
             });
         }
     }
